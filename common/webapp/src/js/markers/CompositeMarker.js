@@ -63,20 +63,20 @@ export class CompositeMarker extends ObjectMarker {
     updateFromData(markerData) {
         super.updateFromData(markerData);
 
-        // Debug logging
-        if (window.bluemap && window.bluemap.appState && window.bluemap.appState.debug) {
-            console.log("CompositeMarker.updateFromData:", markerData);
-        }
-
-        // Update geometries
+        // Update geometries - use position from markerData (which is now set in this.position after super call)
         const geometries = markerData.geometries || [];
+        const basePosition = markerData.position || {x: this.position.x, y: this.position.y, z: this.position.z};
+        
         if (geometries.length === 0) {
             console.error("CompositeMarker: No geometries provided for marker", this.data.id, "- marker will not be visible");
             console.error("Marker data:", markerData);
+        } else {
+            console.log("CompositeMarker: Processing", geometries.length, "geometries for marker", this.data.id, "at position", basePosition);
         }
-        if (!this._markerData.geometries || !deepEquals(geometries, this._markerData.geometries) ||
-            !this._markerData.position || !deepEquals(markerData.position, this._markerData.position)) {
-            this.updateGeometries(geometries, markerData.position || {});
+        
+        // Always update geometries if they exist
+        if (geometries.length > 0) {
+            this.updateGeometries(geometries, basePosition);
         }
 
         // Update icon if present
@@ -103,6 +103,8 @@ export class CompositeMarker extends ObjectMarker {
      * @param basePosition {{x: number, y: number, z: number}}
      */
     updateGeometries(geometries, basePosition) {
+        console.log("CompositeMarker.updateGeometries: Processing", geometries.length, "geometries, basePosition:", basePosition);
+        
         // Remove old geometry markers that are no longer present
         const currentIndices = new Set(geometries.map((_, idx) => idx));
         for (const [idx, marker] of this.geometryMarkers.entries()) {
@@ -120,6 +122,8 @@ export class CompositeMarker extends ObjectMarker {
                 return;
             }
 
+            console.log("CompositeMarker: Processing geometry", idx, "type:", geometry.type, geometry);
+
             let marker = this.geometryMarkers.get(idx);
             const needsNewMarker = !marker || marker.data.type !== geometry.type;
 
@@ -130,6 +134,7 @@ export class CompositeMarker extends ObjectMarker {
                 }
                 marker = this.createGeometryMarker(geometry.type, idx);
                 if (marker) {
+                    console.log("CompositeMarker: Created", geometry.type, "marker at index", idx);
                     this.add(marker);
                     this.geometryMarkers.set(idx, marker);
                 } else {
@@ -140,12 +145,16 @@ export class CompositeMarker extends ObjectMarker {
 
             if (marker) {
                 try {
+                    console.log("CompositeMarker: Updating geometry marker", idx, "with data:", geometry);
                     this.updateGeometryMarker(marker, geometry, basePosition);
+                    console.log("CompositeMarker: Successfully updated geometry marker", idx);
                 } catch (e) {
-                    console.error("CompositeMarker: Error updating geometry marker at index", idx, e);
+                    console.error("CompositeMarker: Error updating geometry marker at index", idx, e, e.stack);
                 }
             }
         });
+        
+        console.log("CompositeMarker.updateGeometries: Final geometryMarkers size:", this.geometryMarkers.size);
     }
 
     /**
