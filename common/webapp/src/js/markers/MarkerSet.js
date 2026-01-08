@@ -29,6 +29,7 @@ import {ExtrudeMarker} from "./ExtrudeMarker";
 import {LineMarker} from "./LineMarker";
 import {HtmlMarker} from "./HtmlMarker";
 import {PoiMarker} from "./PoiMarker";
+import {CompositeMarker} from "./CompositeMarker";
 import {reactive} from "vue";
 import {getLocalStorage, setLocalStorage} from "../Utils";
 
@@ -173,6 +174,7 @@ export class MarkerSet extends Scene {
                 case "line" : marker = new LineMarker(markerId); break;
                 case "html" : marker = new HtmlMarker(markerId); break;
                 case "poi" : marker = new PoiMarker(markerId); break;
+                case "composite" : marker = new CompositeMarker(markerId); break;
                 default : throw new Error(`Unknown marker-type: '${data.type}'`);
             }
 
